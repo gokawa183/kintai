@@ -124,6 +124,17 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .progress-text { font-size: 11px; color: var(--text-faint); }
 .reset-area { margin-top: 24px; text-align: center; }
 .btn-reset { background: none; border: none; font-size: 12px; color: var(--text-faint); cursor: pointer; font-family: inherit; text-decoration: underline; padding: 8px; }
+
+/* 出社スケジュール */
+.schedule-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; }
+.schedule-title { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .03em; margin-bottom: 10px; }
+.schedule-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.schedule-row:last-child { margin-bottom: 0; }
+.schedule-person { font-size: 12px; font-weight: 700; width: 38px; flex-shrink: 0; }
+.day-btn { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border-md); font-size: 11px; font-weight: 700; cursor: pointer; background: var(--surface2); color: var(--text-muted); font-family: inherit; transition: all .15s; }
+.day-btn.on-self { background: #1a1917; border-color: #1a1917; color: #fff; }
+.day-btn.on-h    { background: #1a56db; border-color: #1a56db; color: #fff; }
+.day-btn.on-k    { background: #15803d; border-color: #15803d; color: #fff; }
 </style>
 </head>
 <body>
@@ -153,6 +164,10 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 
 <!-- 新規登録 -->
 <div id="new" class="section visible">
+  <div class="schedule-card">
+    <div class="schedule-title">出社スケジュール（タップで切り替え）</div>
+    <div id="schedule-rows"></div>
+  </div>
   <div class="type-grid">
     <div class="type-card" id="tc-remote"   onclick="selectType('remote')">  <span class="type-icon">🏠</span><span class="type-name">在宅切り替え</span>  <span class="type-desc">曜日がいつもと違う日</span></div>
     <div class="type-card" id="tc-training" onclick="selectType('training')"><span class="type-icon">📚</span><span class="type-name">研修・社内イベント</span><span class="type-desc">HRMOSに加算必要</span></div>
@@ -375,6 +390,67 @@ var TYPE_META = {
   },
 };
 
+// ---- 出社スケジュール ----
+var SCHEDULE_KEY = 'kintai_schedule';
+var SCHEDULE_DAYS = [1, 2, 3, 4, 5, 6]; // DOW index: 月〜土
+
+function defaultSchedule() {
+  return {
+    self: [false,false,false,false,false,false,false],
+    h:    [false,false,false,false,false,false,false],
+    k:    [false,false,false,false,false,false,false],
+  };
+}
+
+var officeSchedule = defaultSchedule();
+
+function loadSchedule() {
+  try {
+    var raw = localStorage.getItem(SCHEDULE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      ['self','h','k'].forEach(function(p) {
+        if (parsed[p] && parsed[p].length === 7) officeSchedule[p] = parsed[p];
+      });
+    }
+  } catch(e) {}
+}
+
+function saveSchedule() {
+  try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(officeSchedule)); } catch(e) {}
+}
+
+function toggleScheduleDay(person, dayIdx) {
+  officeSchedule[person][dayIdx] = !officeSchedule[person][dayIdx];
+  saveSchedule();
+  renderSchedule();
+}
+
+function renderSchedule() {
+  var container = document.getElementById('schedule-rows');
+  if (!container) return;
+  container.innerHTML = '';
+  ['self','h','k'].forEach(function(p) {
+    var row = document.createElement('div');
+    row.className = 'schedule-row';
+    var nameEl = document.createElement('span');
+    nameEl.className = 'schedule-person';
+    nameEl.textContent = PERSON_META[p].name;
+    row.appendChild(nameEl);
+    SCHEDULE_DAYS.forEach(function(di) {
+      var isOn = officeSchedule[p][di];
+      var btn = document.createElement('button');
+      btn.className = 'day-btn' + (isOn ? ' on-'+p : '');
+      btn.textContent = DOW[di];
+      btn.onclick = (function(pp, d) {
+        return function(e) { e.stopPropagation(); toggleScheduleDay(pp, d); };
+      })(p, di);
+      row.appendChild(btn);
+    });
+    container.appendChild(row);
+  });
+}
+
 // ---- 人切り替え ----
 function selectPerson(person) {
   currentPerson = person;
@@ -557,6 +633,8 @@ function resetData() {
   renderList();
 }
 
+loadSchedule();
+renderSchedule();
 renderList();
 </script>
 </body>
