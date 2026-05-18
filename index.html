@@ -240,7 +240,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     <div class="field"><label>日付</label><input type="date" id="t-date"></div>
     <div class="field"><label>研修・イベント名</label><input type="text" id="t-name" placeholder="例：新人研修、全社会議"></div>
     <div class="field"><label>研修時間</label>
-      <div class="time-row"><input type="time" id="t-start" value="10:00"><span>〜</span><input type="time" id="t-end" value="12:00"></div>
+      <div class="time-row"><input type="time" id="t-start" value="10:00" step="900"><span>〜</span><input type="time" id="t-end" value="12:00" step="900"></div>
     </div>
     <div class="field"><label>メモ（任意）</label><textarea id="t-memo" placeholder="例：午後から現場復帰"></textarea></div>
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
@@ -274,7 +274,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
       <select id="l-type" onchange="updateLateTimeLabel()"><option>遅刻</option><option>早退</option><option>遅刻＋早退</option><option>残業</option></select>
     </div>
     <div class="field"><label id="l-time-label">実際の出退勤時刻</label>
-      <div class="time-row"><input type="time" id="l-start"><span>〜</span><input type="time" id="l-end"></div>
+      <div class="time-row"><input type="time" id="l-start" step="900"><span>〜</span><input type="time" id="l-end" step="900"></div>
     </div>
     <div class="field"><label>メモ（任意）</label><textarea id="l-memo" placeholder="例：電車遅延、体調不良"></textarea></div>
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
