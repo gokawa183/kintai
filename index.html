@@ -827,14 +827,7 @@ function calcMonthHours(person, year, month) {
   allEntries[person].forEach(function(e) {
     if (e.date.indexOf(prefix) !== 0) return;
     if (e.type === 'remote') {
-      var m = e.detail.match(/休憩(\d+)分/);
-      if (m) {
-        var delta = parseInt(m[1]) / 60;
-        adj += delta;
-        breakdown.push({ date: e.date, label: e.detail, delta: delta, kind: 'entry' });
-      } else {
-        breakdown.push({ date: e.date, label: e.detail || '在宅切り替え', delta: null, kind: 'entry' });
-      }
+      breakdown.push({ date: e.date, label: e.detail || '在宅切り替え', delta: 0, kind: 'entry' });
     } else if (e.type === 'holiday') {
       var delta = e.detail.indexOf('半休') !== -1 ? -4 : -8;
       adj += delta;
