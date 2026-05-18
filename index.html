@@ -30,9 +30,10 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
   cursor: pointer; background: var(--surface); color: var(--text-muted);
   font-weight: 600; transition: all .15s; text-align: center;
 }
-.person-btn.active-self     { background: #1a1917; border-color: #1a1917; color: #fff; }
-.person-btn.active-h        { background: #1a56db; border-color: #1a56db; color: #fff; }
-.person-btn.active-k        { background: #15803d; border-color: #15803d; color: #fff; }
+.person-btn.active-self { background: #1a1917; border-color: #1a1917; color: #fff; }
+.person-btn.active-h    { background: #1a56db; border-color: #1a56db; color: #fff; }
+.person-btn.active-k    { background: #15803d; border-color: #15803d; color: #fff; }
+.person-btn.active-all  { background: #7c3aed; border-color: #7c3aed; color: #fff; }
 .person-indicator {
   display: flex; align-items: center; gap: 8px;
   background: var(--surface); border: 1px solid var(--border);
@@ -43,7 +44,12 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .dot-self { background: #1a1917; }
 .dot-h    { background: #1a56db; }
 .dot-k    { background: #15803d; }
+.dot-all  { background: #7c3aed; }
 .person-name { font-weight: 700; color: var(--text); }
+.entry-person-label { font-size: 11px; font-weight: 700; flex-shrink: 0; padding: 2px 7px; border-radius: 20px; }
+.label-self { background: rgba(26,25,23,.08);  color: #1a1917; }
+.label-h    { background: rgba(26,86,219,.1);  color: #1a56db; }
+.label-k    { background: rgba(21,128,61,.1);  color: #15803d; }
 
 /* タブ */
 .tab-bar { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; }
@@ -130,6 +136,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
   <button class="person-btn active-self" id="pb-self" onclick="selectPerson('self')">自分</button>
   <button class="person-btn" id="pb-h" onclick="selectPerson('h')">Hさん</button>
   <button class="person-btn" id="pb-k" onclick="selectPerson('k')">Kさん</button>
+  <button class="person-btn" id="pb-all" onclick="selectPerson('all')">全員</button>
 </div>
 <div class="person-indicator">
   <div class="person-dot dot-self" id="p-dot"></div>
@@ -272,6 +279,7 @@ var PERSON_META = {
   self: { name: '自分',  dot: 'dot-self', btn: 'active-self' },
   h:    { name: 'Hさん', dot: 'dot-h',    btn: 'active-h'    },
   k:    { name: 'Kさん', dot: 'dot-k',    btn: 'active-k'    },
+  all:  { name: '全員',  dot: 'dot-all',  btn: 'active-all'  },
 };
 
 // タイプ定義：ラベル・スタイル・フォーム操作・月末タスクを一元管理
@@ -366,17 +374,18 @@ var TYPE_META = {
 function selectPerson(person) {
   currentPerson = person;
   var meta = PERSON_META[person];
-  ['self','h','k'].forEach(function(p) {
+  ['self','h','k','all'].forEach(function(p) {
     document.getElementById('pb-'+p).className = 'person-btn' + (p===person ? ' '+PERSON_META[p].btn : '');
   });
   document.getElementById('p-dot').className = 'person-dot '+meta.dot;
   document.getElementById('p-name').textContent = meta.name;
   resetForm();
-  renderList();
+  if (person === 'all') { showTab('list'); } else { renderList(); }
 }
 
 // ---- タブ ----
 function showTab(id) {
+  if (id === 'new' && currentPerson === 'all') return;
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('visible'); });
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById(id).classList.add('visible');
@@ -433,20 +442,20 @@ function changeFilter(d) {
   renderList();
 }
 
-function renderTaskList(entry) {
+function renderTaskList(entry, personKey) {
   var tasks = (TYPE_META[entry.type] || {}).tasks || [];
   return tasks.map(function(task, i) {
     var done = entry.tasks[i];
     var sc = task.sys==='gemba' ? 'sys-gemba' : 'sys-jisha';
     var sl = task.sys==='gemba' ? '現場' : '自社';
     var tt = task.text.replace(/^[^：]+：/,'');
-    return '<div class="task-item'+(done?' done':'')+'" onclick="toggleTask(\''+currentPerson+'\','+entry.id+','+i+')">'
-      +'<input type="checkbox"'+(done?' checked':'')+' onclick="event.stopPropagation();toggleTask(\''+currentPerson+'\','+entry.id+','+i+')">'
+    return '<div class="task-item'+(done?' done':'')+'" onclick="toggleTask(\''+personKey+'\','+entry.id+','+i+')">'
+      +'<input type="checkbox"'+(done?' checked':'')+' onclick="event.stopPropagation();toggleTask(\''+personKey+'\','+entry.id+','+i+')">'
       +'<label><span class="cl-sys '+sc+'">'+sl+'</span>'+tt+'</label></div>';
   }).join('');
 }
 
-function renderEntryCard(entry) {
+function renderEntryCard(entry, personKey) {
   var meta      = TYPE_META[entry.type] || {};
   var tasks     = meta.tasks || [];
   var allDone   = entry.tasks.every(function(v){ return v; });
@@ -454,18 +463,22 @@ function renderEntryCard(entry) {
   var progHTML  = allDone
     ? '<span class="done-badge">✓ 対応済</span>'
     : '<span class="progress-text">'+doneCount+'/'+tasks.length+'</span>';
+  var personLabel = personKey
+    ? '<span class="entry-person-label label-'+personKey+'">'+PERSON_META[personKey].name+'</span>'
+    : '';
   var card = document.createElement('div');
   card.className = 'entry-card';
   card.innerHTML =
     '<div class="entry-head" onclick="toggleCard('+entry.id+')">'
     +'<span class="entry-badge '+meta.badge+'">'+meta.icon+' '+meta.label+'</span>'
+    +personLabel
     +'<div><div class="entry-date">'+formatDate(entry.date)+'</div>'+(entry.detail?'<div class="entry-preview">'+entry.detail+'</div>':'')+'</div>'
     +'<div class="entry-right">'+progHTML+'<span class="entry-chevron" id="chev-'+entry.id+'">▼</span></div>'
     +'</div>'
     +'<div class="entry-body" id="eb-'+entry.id+'">'
     +(entry.detail?'<div class="entry-detail">'+entry.detail+'</div>':'')
-    +'<div class="entry-tasks">'+renderTaskList(entry)+'</div>'
-    +'<div class="entry-footer"><button class="btn-delete" onclick="deleteEntry(\''+currentPerson+'\','+entry.id+')">この記録を削除</button></div>'
+    +'<div class="entry-tasks">'+renderTaskList(entry, personKey)+'</div>'
+    +'<div class="entry-footer"><button class="btn-delete" onclick="deleteEntry(\''+personKey+'\','+entry.id+')">この記録を削除</button></div>'
     +'</div>';
   return card;
 }
@@ -474,16 +487,27 @@ function renderList() {
   var el = document.getElementById('filter-label');
   if (el) el.textContent = filterYear+'年 '+MONTHS[filterMonth];
   var prefix = filterYear+'-'+(filterMonth+1 < 10 ? '0' : '')+(filterMonth+1);
-  var filtered = allEntries[currentPerson].filter(function(e){ return e.date.indexOf(prefix) === 0; });
-  filtered.sort(function(a,b){ return a.date.localeCompare(b.date); });
   var container = document.getElementById('entry-list');
-  if (!filtered.length) {
+  var items = [];
+  if (currentPerson === 'all') {
+    ['self','h','k'].forEach(function(p) {
+      allEntries[p].forEach(function(e) {
+        if (e.date.indexOf(prefix) === 0) items.push({ entry: e, personKey: p });
+      });
+    });
+  } else {
+    allEntries[currentPerson].forEach(function(e) {
+      if (e.date.indexOf(prefix) === 0) items.push({ entry: e, personKey: currentPerson });
+    });
+  }
+  items.sort(function(a, b) { return a.entry.date.localeCompare(b.entry.date); });
+  if (!items.length) {
     container.innerHTML = '<div class="empty-state">'+PERSON_META[currentPerson].name+'のイレギュラーはありません。</div>';
     return;
   }
   container.innerHTML = '';
-  filtered.forEach(function(entry) {
-    container.appendChild(renderEntryCard(entry));
+  items.forEach(function(item) {
+    container.appendChild(renderEntryCard(item.entry, item.personKey));
   });
 }
 
