@@ -282,7 +282,6 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
         <div class="cl-item gemba"><span class="cl-sys sys-gemba">現場システム</span>実際の出退勤時刻で修正入力する</div>
         <div class="cl-item gemba"><span class="cl-sys sys-gemba">現場Excel</span>実際の出退勤時刻を記入する</div>
         <div class="cl-item jisha"><span class="cl-sys sys-jisha">HRMOS</span>実際の出退勤時刻・勤務区分を入力する</div>
-        <div class="cl-item jisha"><span class="cl-sys sys-jisha">自社システム</span>実働時間を正しく入力する</div>
       </div>
     </div>
     <button class="btn-add" onclick="addEntry('late')">登録する</button>
@@ -416,7 +415,6 @@ var TYPE_META = {
       { sys: 'gemba', text: '現場システム：実際の出退勤時刻で修正入力する' },
       { sys: 'gemba', text: '現場Excel：実際の出退勤時刻を記入する' },
       { sys: 'jisha', text: 'HRMOS：実際の出退勤時刻・勤務区分を入力する' },
-      { sys: 'jisha', text: '自社システム：実働時間を正しく入力する' },
     ],
     getDetail: function() {
       var ltype = document.getElementById('l-type').value;
