@@ -82,7 +82,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 }
 .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
 .time-row { display: flex; gap: 8px; align-items: center; }
-.time-row input { flex: 1; }
+.time-row input, .time-row select { flex: 1; }
 .time-row span { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 .checklist-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .03em; margin-bottom: 8px; display: block; }
 .checklist { display: flex; flex-direction: column; gap: 6px; }
@@ -240,7 +240,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     <div class="field"><label>日付</label><input type="date" id="t-date"></div>
     <div class="field"><label>研修・イベント名</label><input type="text" id="t-name" placeholder="例：新人研修、全社会議"></div>
     <div class="field"><label>研修時間</label>
-      <div class="time-row"><input type="time" id="t-start" value="10:00" step="900"><span>〜</span><input type="time" id="t-end" value="12:00" step="900"></div>
+      <div class="time-row"><select id="t-start"></select><span>〜</span><select id="t-end"></select></div>
     </div>
     <div class="field"><label>メモ（任意）</label><textarea id="t-memo" placeholder="例：午後から現場復帰"></textarea></div>
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
@@ -274,7 +274,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
       <select id="l-type" onchange="updateLateTimeLabel()"><option>遅刻</option><option>早退</option><option>遅刻＋早退</option><option>残業</option></select>
     </div>
     <div class="field"><label id="l-time-label">実際の出退勤時刻</label>
-      <div class="time-row"><input type="time" id="l-start" step="900"><span>〜</span><input type="time" id="l-end" step="900"></div>
+      <div class="time-row"><select id="l-start"></select><span>〜</span><select id="l-end"></select></div>
     </div>
     <div class="field"><label>メモ（任意）</label><textarea id="l-memo" placeholder="例：電車遅延、体調不良"></textarea></div>
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
@@ -535,6 +535,30 @@ function renderOtDefaults() {
 
     container.appendChild(row);
   });
+}
+
+function buildTimeOptions(selectId, defaultVal, includeBlank) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = '';
+  if (includeBlank) {
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = '--:--';
+    sel.appendChild(blank);
+  }
+  for (var h = 0; h < 24; h++) {
+    for (var m = 0; m < 60; m += 15) {
+      var hh = (h < 10 ? '0' : '') + h;
+      var mm = (m < 10 ? '0' : '') + m;
+      var val = hh + ':' + mm;
+      var opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      if (val === defaultVal) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
 }
 
 function updateLateTimeLabel() {
@@ -1014,6 +1038,10 @@ function resetData() {
   renderList();
 }
 
+buildTimeOptions('t-start', '10:00', false);
+buildTimeOptions('t-end',   '12:00', false);
+buildTimeOptions('l-start', '',      true);
+buildTimeOptions('l-end',   '',      true);
 loadSchedule();
 renderSchedule();
 loadOtDefaults();
