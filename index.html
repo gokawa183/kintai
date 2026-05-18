@@ -827,7 +827,8 @@ function calcMonthHours(person, year, month) {
   allEntries[person].forEach(function(e) {
     if (e.date.indexOf(prefix) !== 0) return;
     if (e.type === 'remote') {
-      breakdown.push({ date: e.date, label: e.detail || '在宅切り替え', delta: 0, kind: 'entry' });
+      var remoteLabel = '在宅切り替え' + (e.detail ? '（' + e.detail + '）' : '');
+      breakdown.push({ date: e.date, label: remoteLabel, delta: 0, kind: 'entry' });
     } else if (e.type === 'holiday') {
       var delta = e.detail.indexOf('半休') !== -1 ? -4 : -8;
       adj += delta;
