@@ -829,13 +829,15 @@ function calcMonthHours(person, year, month) {
     if (e.type === 'remote') {
       var remoteLabel = '在宅切り替え' + (e.detail ? '（' + e.detail + '）' : '');
       breakdown.push({ date: e.date, label: remoteLabel, delta: 0, kind: 'entry' });
+    } else if (e.type === 'training') {
+      var trainingLabel = '研修・社内イベント' + (e.detail ? '（' + e.detail + '）' : '');
+      breakdown.push({ date: e.date, label: trainingLabel, delta: 0, kind: 'entry' });
     } else if (e.type === 'holiday') {
       var delta = e.detail.indexOf('半休') !== -1 ? -4 : -8;
       adj += delta;
       breakdown.push({ date: e.date, label: e.detail || '休暇取得', delta: delta, kind: 'entry' });
     } else if (e.type === 'bukai') {
-      adj += 2;
-      breakdown.push({ date: e.date, label: '部会（19:00〜21:00）', delta: 2, kind: 'entry' });
+      breakdown.push({ date: e.date, label: '部会（19:00〜21:00）', delta: 0, kind: 'entry' });
     } else if (e.type === 'juhachi') {
       breakdown.push({ date: e.date, label: '18時番（9:00〜18:00）', delta: 0, kind: 'entry' });
     } else if (e.type === 'late') {
