@@ -283,7 +283,22 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 
 <script>
 // ---- データ ----
+var STORAGE_KEY = 'kintai_entries';
+
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allEntries)); } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) allEntries = JSON.parse(raw);
+  } catch(e) {}
+}
+
 var allEntries = { self: [], h: [], k: [] };
+loadFromStorage();
+
 var currentPerson = 'self';
 var selectedType = null;
 var filterYear  = new Date().getFullYear();
@@ -439,6 +454,7 @@ function addEntry(type) {
   var taskDone = meta.tasks.map(function() { return false; });
   var entry = { id: Date.now(), type: type, date: dateVal, detail: detail, tasks: taskDone };
   allEntries[currentPerson].unshift(entry);
+  saveToStorage();
   resetForm();
   showCopyModal(entryToText(entry));
 }
@@ -527,7 +543,7 @@ function importData() {
   });
   document.getElementById('import-text').value = '';
   document.getElementById('import-area').style.display = 'none';
-  if (imported) { renderList(); alert(imported+'件を読み込みました'); }
+  if (imported) { saveToStorage(); renderList(); alert(imported+'件を読み込みました'); }
   else alert('読み込める新しいデータがありませんでした');
 }
 
@@ -608,6 +624,7 @@ function toggleTask(person, entryId, taskIdx) {
   }
   if (!entry) return;
   entry.tasks[taskIdx] = !entry.tasks[taskIdx];
+  saveToStorage();
   renderList();
   var body = document.getElementById('eb-'+entryId);
   var chev = document.getElementById('chev-'+entryId);
@@ -617,6 +634,7 @@ function toggleTask(person, entryId, taskIdx) {
 function deleteEntry(person, id) {
   if (!confirm('この記録を削除しますか？')) return;
   allEntries[person] = allEntries[person].filter(function(e){ return e.id!==id; });
+  saveToStorage();
   renderList();
 }
 
