@@ -226,8 +226,8 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
       <div class="checklist">
         <div class="cl-item gemba"><span class="cl-sys sys-gemba">現場システム</span>休憩時間を在宅切り替え時の時間にする</div>
-        <div class="cl-item gemba"><span class="cl-sys sys-gemba">現場Excel</span>休憩時間を在宅切り替え時の時間にする</div>
-        <div class="cl-item jisha"><span class="cl-sys sys-jisha">HRMOS</span>休憩時間を在宅切り替え時の時間にする</div>
+        <div class="cl-item gemba"><span class="cl-sys sys-gemba">現場Excel</span>勤務時間と休憩時間を切り替え時の時間にする</div>
+        <div class="cl-item jisha"><span class="cl-sys sys-jisha">HRMOS</span>勤務時間と休憩時間を切り替え時の時間にする</div>
       </div>
     </div>
     <button class="btn-add" onclick="addEntry('remote')">登録する</button>
@@ -360,8 +360,8 @@ var TYPE_META = {
     dateId: 'r-date',
     tasks: [
       { sys: 'gemba', text: '現場システム：休憩時間を在宅切り替え時の時間にする' },
-      { sys: 'gemba', text: '現場Excel：休憩時間を在宅切り替え時の時間にする' },
-      { sys: 'jisha', text: 'HRMOS：休憩時間を在宅切り替え時の時間にする' },
+      { sys: 'gemba', text: '現場Excel：勤務時間と休憩時間を切り替え時の時間にする' },
+      { sys: 'jisha', text: 'HRMOS：勤務時間と休憩時間を切り替え時の時間にする' },
     ],
     getDetail: function() {
       var rest = document.getElementById('r-rest').value;
