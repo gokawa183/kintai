@@ -145,6 +145,8 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .hours-blabel { flex: 1; color: var(--text); min-width: 0; }
 .hours-bdelta { font-weight: 700; flex-shrink: 0; white-space: nowrap; color: var(--text); }
 .hours-bna { color: var(--text-faint); font-style: italic; font-weight: 400; }
+.fixed-task-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.fixed-task-head { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .03em; padding: 10px 14px 0; }
 .reset-area { margin-top: 24px; text-align: center; }
 .btn-reset { background: none; border: none; font-size: 12px; color: var(--text-faint); cursor: pointer; font-family: inherit; text-decoration: underline; padding: 8px; }
 
@@ -453,6 +455,27 @@ var TYPE_META = {
     },
   },
 };
+
+// ---- 月次固定タスク ----
+var FIXED_TASK_KEY = 'kintai_fixed_tasks';
+var fixedTaskDone = {};
+
+function loadFixedTasks() {
+  try {
+    var raw = localStorage.getItem(FIXED_TASK_KEY);
+    if (raw) fixedTaskDone = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function saveFixedTasks() {
+  try { localStorage.setItem(FIXED_TASK_KEY, JSON.stringify(fixedTaskDone)); } catch(e) {}
+}
+
+function toggleFixedTask(monthKey) {
+  fixedTaskDone[monthKey] = !fixedTaskDone[monthKey];
+  saveFixedTasks();
+  renderList();
+}
 
 // ---- 在宅切り替え時の基本残業時間 ----
 var OT_DEFAULT_KEY = 'kintai_ot_defaults';
@@ -918,12 +941,27 @@ function renderList() {
   items.sort(function(a, b) { return a.entry.date.localeCompare(b.entry.date); });
   if (!items.length) {
     container.innerHTML = '<div class="empty-state">'+PERSON_META[currentPerson].name+'のイレギュラーはありません。</div>';
-    return;
+  } else {
+    container.innerHTML = '';
+    items.forEach(function(item) {
+      container.appendChild(renderEntryCard(item.entry, item.personKey));
+    });
   }
-  container.innerHTML = '';
-  items.forEach(function(item) {
-    container.appendChild(renderEntryCard(item.entry, item.personKey));
-  });
+  container.appendChild(renderFixedTaskCard());
+}
+
+function renderFixedTaskCard() {
+  var monthKey = filterYear + '-' + (filterMonth + 1 < 10 ? '0' : '') + (filterMonth + 1);
+  var done = !!fixedTaskDone[monthKey];
+  var card = document.createElement('div');
+  card.className = 'fixed-task-card';
+  card.innerHTML =
+    '<div class="fixed-task-head">毎月の作業</div>'
+    + '<div class="task-item' + (done ? ' done' : '') + '" onclick="toggleFixedTask(\'' + monthKey + '\')" style="padding:8px 14px 12px;">'
+    + '<input type="checkbox"' + (done ? ' checked' : '') + ' onclick="event.stopPropagation();toggleFixedTask(\'' + monthKey + '\')">'
+    + '<label><span class="cl-sys sys-jisha">自社</span>来月の希望残業時間と許容残業時間を入力する</label>'
+    + '</div>';
+  return card;
 }
 
 function toggleCard(id) {
@@ -971,6 +1009,7 @@ loadSchedule();
 renderSchedule();
 loadOtDefaults();
 renderOtDefaults();
+loadFixedTasks();
 renderList();
 </script>
 </body>
