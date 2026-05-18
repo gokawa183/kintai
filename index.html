@@ -190,7 +190,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     <div class="type-card" id="tc-remote"   onclick="selectType('remote')">  <span class="type-icon">🏠</span><span class="type-name">在宅切り替え</span>  <span class="type-desc">曜日がいつもと違う日</span></div>
     <div class="type-card" id="tc-training" onclick="selectType('training')"><span class="type-icon">📚</span><span class="type-name">研修・社内イベント</span><span class="type-desc">HRMOSに加算必要</span></div>
     <div class="type-card" id="tc-holiday"  onclick="selectType('holiday')"> <span class="type-icon">🌴</span><span class="type-name">休暇取得</span>         <span class="type-desc">有給・特休など</span></div>
-    <div class="type-card" id="tc-late"     onclick="selectType('late')">    <span class="type-icon">⏰</span><span class="type-name">遅刻・早退</span>       <span class="type-desc">時刻がいつもと違う</span></div>
+    <div class="type-card" id="tc-late"     onclick="selectType('late')">    <span class="type-icon">⏰</span><span class="type-name">遅刻・早退・残業</span>   <span class="type-desc">時刻がいつもと違う</span></div>
     <div class="type-card" id="tc-bukai"    onclick="selectType('bukai')">   <span class="type-icon">👥</span><span class="type-name">部会</span>             <span class="type-desc">19:00〜21:00・残業登録</span></div>
   </div>
 
@@ -242,7 +242,7 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
   </div>
 
   <div class="entry-form" id="form-late">
-    <div class="form-title">⏰ 遅刻・早退の登録</div>
+    <div class="form-title">⏰ 遅刻・早退・残業の登録</div>
     <div class="field"><label>日付</label><input type="date" id="l-date"></div>
     <div class="field"><label>種別</label>
       <select id="l-type" onchange="updateLateTimeLabel()"><option>遅刻</option><option>早退</option><option>遅刻＋早退</option><option>残業</option></select>
