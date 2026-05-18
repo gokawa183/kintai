@@ -116,23 +116,6 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .btn-delete { font-size: 12px; padding: 6px 14px; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-xs); color: var(--red); cursor: pointer; font-family: inherit; font-weight: 600; }
 .done-badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
 .progress-text { font-size: 11px; color: var(--text-faint); }
-.bottom-btns { display: flex; gap: 8px; margin-top: 16px; }
-.bottom-btn { flex: 1; padding: 9px; background: var(--surface); border: 1px solid var(--border-md); border-radius: var(--radius-xs); font-size: 12px; font-family: inherit; cursor: pointer; color: var(--text-muted); }
-.import-area { display: none; margin-top: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
-.import-area .note { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
-.import-area textarea { width: 100%; height: 80px; font-size: 13px; padding: 8px; border: 1px solid var(--border-md); border-radius: var(--radius-xs); background: var(--surface2); font-family: inherit; resize: none; }
-.import-area .btn-import { width: 100%; margin-top: 6px; padding: 9px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-xs); font-size: 13px; font-family: inherit; font-weight: 700; cursor: pointer; }
-
-/* コピーモーダル */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; justify-content: center; }
-.modal-overlay.open { display: flex; }
-.modal-box { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 18px 36px; width: 100%; max-width: 480px; }
-.modal-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.modal-box .modal-note { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6; }
-.modal-box textarea { width: 100%; height: 120px; font-size: 13px; padding: 10px; border: 1px solid var(--border-md); border-radius: var(--radius-xs); background: var(--surface2); font-family: inherit; resize: none; }
-.modal-actions { display: flex; gap: 8px; margin-top: 12px; }
-.modal-copy-btn { flex: 1; padding: 11px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; font-weight: 700; cursor: pointer; }
-.modal-close-btn { padding: 11px 16px; background: none; border: 1px solid var(--border-md); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; cursor: pointer; color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -257,28 +240,6 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     <button onclick="changeFilter(1)">&#8250;</button>
   </div>
   <div id="entry-list"></div>
-  <div class="bottom-btns">
-    <button class="bottom-btn" onclick="exportMonth()">📤 今月分をコピー</button>
-    <button class="bottom-btn" onclick="toggleImport()">📥 メモから読み込む</button>
-  </div>
-  <div class="import-area" id="import-area">
-    <div class="note">保存済みテキストを貼り付けてください（対象者：<span id="import-person-label">自分</span>）</div>
-    <textarea id="import-text" placeholder="【在宅切り替え】5月8日（木） 休憩60分"></textarea>
-    <button class="btn-import" onclick="importData()">読み込む</button>
-  </div>
-</div>
-
-<!-- コピーモーダル -->
-<div class="modal-overlay" id="copy-modal" onclick="closeModalOutside(event)">
-  <div class="modal-box">
-    <h3 id="modal-title">📋 メモアプリに保存してください</h3>
-    <div class="modal-note">以下をコピーしてiPhoneのメモアプリに貼り付けて保存してください。次回「メモから読み込む」で復元できます。</div>
-    <textarea id="copy-modal-text" readonly></textarea>
-    <div class="modal-actions">
-      <button class="modal-copy-btn" id="copy-modal-btn" onclick="copyModalText()">コピーする</button>
-      <button class="modal-close-btn" onclick="closeCopyModal()">閉じる</button>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -410,7 +371,6 @@ function selectPerson(person) {
   });
   document.getElementById('p-dot').className = 'person-dot '+meta.dot;
   document.getElementById('p-name').textContent = meta.name;
-  document.getElementById('import-person-label').textContent = meta.name;
   resetForm();
   renderList();
 }
@@ -456,95 +416,13 @@ function addEntry(type) {
   allEntries[currentPerson].unshift(entry);
   saveToStorage();
   resetForm();
-  showCopyModal(entryToText(entry));
+  showTab('list');
 }
 
 // ---- テキスト変換 ----
 function formatDate(dateStr) {
   var d = new Date(dateStr+'T00:00:00');
   return (d.getMonth()+1)+'月'+d.getDate()+'日（'+DOW[d.getDay()]+'）';
-}
-
-function entryToText(entry) {
-  var meta = TYPE_META[entry.type] || {};
-  var line = '【'+meta.label+'】'+formatDate(entry.date);
-  if (entry.detail) line += ' '+entry.detail;
-  return line;
-}
-
-function exportMonth() {
-  var prefix = filterYear+'-'+(filterMonth+1 < 10 ? '0' : '')+(filterMonth+1);
-  var filtered = allEntries[currentPerson].filter(function(e){ return e.date.indexOf(prefix) === 0; });
-  if (!filtered.length) { alert('この月の記録がありません'); return; }
-  filtered.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var personName = PERSON_META[currentPerson].name;
-  var text = '＝'+personName+'　'+filterYear+'年'+MONTHS[filterMonth]+'＝\n'
-    + filtered.map(function(e){ return entryToText(e); }).join('\n');
-  showCopyModal(text);
-}
-
-// ---- コピーモーダル ----
-function showCopyModal(text) {
-  document.getElementById('copy-modal-text').value = text;
-  document.getElementById('copy-modal-btn').textContent = 'コピーする';
-  document.getElementById('copy-modal').classList.add('open');
-  setTimeout(function(){
-    var el = document.getElementById('copy-modal-text');
-    el.select();
-    try { document.execCommand('copy'); document.getElementById('copy-modal-btn').textContent = 'コピーしました ✓'; } catch(e) {}
-  }, 100);
-}
-
-function closeCopyModal() {
-  document.getElementById('copy-modal').classList.remove('open');
-  showTab('list');
-}
-
-function closeModalOutside(e) {
-  if (e.target.id === 'copy-modal') closeCopyModal();
-}
-
-function copyModalText() {
-  var el = document.getElementById('copy-modal-text');
-  el.select();
-  try {
-    document.execCommand('copy');
-    var btn = document.getElementById('copy-modal-btn');
-    btn.textContent = 'コピーしました ✓';
-    setTimeout(function(){ btn.textContent = 'コピーする'; }, 2000);
-  } catch(e) {}
-}
-
-// ---- インポート ----
-function toggleImport() {
-  var area = document.getElementById('import-area');
-  area.style.display = area.style.display === 'none' ? 'block' : 'none';
-}
-
-function importData() {
-  var text = document.getElementById('import-text').value.trim();
-  if (!text) { alert('テキストを貼り付けてください'); return; }
-  var imported = 0;
-  text.split('\n').forEach(function(line) {
-    line = line.trim();
-    if (!line || line.indexOf('＝') === 0) return;
-    var m = line.match(/^【(.+?)】(\d+)月(\d+)日（.）\s*(.*)/);
-    if (!m) return;
-    var label = m[1], mon = m[2], day = m[3], rest = m[4];
-    var type = null;
-    Object.keys(TYPE_META).forEach(function(k){ if (TYPE_META[k].label === label) type = k; });
-    if (!type) return;
-    var dateStr = filterYear+'-'+(mon.length===1?'0':'')+mon+'-'+(day.length===1?'0':'')+day;
-    var dup = allEntries[currentPerson].some(function(e){ return e.date===dateStr && e.type===type; });
-    if (dup) return;
-    var taskDone = TYPE_META[type].tasks.map(function() { return false; });
-    allEntries[currentPerson].push({ id: Date.now()+imported, type: type, date: dateStr, detail: rest.trim(), tasks: taskDone });
-    imported++;
-  });
-  document.getElementById('import-text').value = '';
-  document.getElementById('import-area').style.display = 'none';
-  if (imported) { saveToStorage(); renderList(); alert(imported+'件を読み込みました'); }
-  else alert('読み込める新しいデータがありませんでした');
 }
 
 // ---- 一覧 ----
