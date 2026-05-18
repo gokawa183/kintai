@@ -136,10 +136,12 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .hours-detail { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.6; }
 .hours-breakdown { margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; display: flex; flex-direction: column; gap: 3px; }
 .hours-brow { display: flex; align-items: baseline; gap: 8px; font-size: 11px; line-height: 1.5; }
+.hours-brow-base { opacity: 0.5; }
+.hours-brow-hol  { opacity: 0.35; font-style: italic; }
 .hours-bdate { color: var(--text-muted); flex-shrink: 0; white-space: nowrap; }
 .hours-blabel { flex: 1; color: var(--text); min-width: 0; }
 .hours-bdelta { font-weight: 700; flex-shrink: 0; white-space: nowrap; color: var(--text); }
-.hours-bna { color: var(--text-faint); font-style: italic; }
+.hours-bna { color: var(--text-faint); font-style: italic; font-weight: 400; }
 .reset-area { margin-top: 24px; text-align: center; }
 .btn-reset { background: none; border: none; font-size: 12px; color: var(--text-faint); cursor: pointer; font-family: inherit; text-decoration: underline; padding: 8px; }
 
@@ -715,38 +717,63 @@ function countWorkdays(year, month) {
 }
 
 function calcMonthHours(person, year, month) {
-  var workdays = countWorkdays(year, month);
+  var holidays = getJapaneseHolidays(year);
+  var prefix = year + '-' + (month + 1 < 10 ? '0' : '') + (month + 1);
+  var breakdown = [];
+  var workdays = 0;
+
+  // 月内の平日を1日ずつ列挙し、通常勤務 or 祝日に分類
+  var d = new Date(year, month, 1);
+  while (d.getMonth() === month) {
+    var dow = d.getDay();
+    if (dow >= 1 && dow <= 5) {
+      var ds = d.getFullYear() + '-'
+        + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1) + '-'
+        + (d.getDate() < 10 ? '0' : '') + d.getDate();
+      if (holidays.indexOf(ds) !== -1) {
+        breakdown.push({ date: ds, label: '祝日', delta: 0, kind: 'holiday' });
+      } else {
+        workdays++;
+        breakdown.push({ date: ds, label: '通常勤務', delta: 8, kind: 'base' });
+      }
+    }
+    d.setDate(d.getDate() + 1);
+  }
+
   var base = workdays * 8;
   var adj  = 0;
-  var breakdown = [];
-  var prefix = year + '-' + (month + 1 < 10 ? '0' : '') + (month + 1);
+
+  // エントリによる調整
   allEntries[person].forEach(function(e) {
     if (e.date.indexOf(prefix) !== 0) return;
     if (e.type === 'holiday') {
       var delta = e.detail.indexOf('半休') !== -1 ? -4 : -8;
       adj += delta;
-      breakdown.push({ date: e.date, label: e.detail || '休暇取得', delta: delta });
+      breakdown.push({ date: e.date, label: e.detail || '休暇取得', delta: delta, kind: 'entry' });
     } else if (e.type === 'bukai') {
       adj += 2;
-      breakdown.push({ date: e.date, label: '部会（19:00〜21:00）', delta: 2 });
+      breakdown.push({ date: e.date, label: '部会（19:00〜21:00）', delta: 2, kind: 'entry' });
     } else if (e.type === 'late') {
       var ltype = e.detail.split('　')[0];
       var hours = parseTimeRange(e.detail);
       if (hours !== null) {
-        var delta;
-        if (ltype === '残業') {
-          delta = hours;
-        } else {
-          delta = (hours - 1) - 8;
-        }
+        var delta = ltype === '残業' ? hours : (hours - 1) - 8;
         adj += delta;
-        breakdown.push({ date: e.date, label: e.detail, delta: delta });
+        breakdown.push({ date: e.date, label: e.detail, delta: delta, kind: 'entry' });
       } else {
-        breakdown.push({ date: e.date, label: e.detail + '（時刻なし）', delta: null });
+        breakdown.push({ date: e.date, label: e.detail + '（時刻なし）', delta: null, kind: 'entry' });
       }
     }
   });
-  breakdown.sort(function(a, b) { return a.date.localeCompare(b.date); });
+
+  breakdown.sort(function(a, b) {
+    var dc = a.date.localeCompare(b.date);
+    if (dc !== 0) return dc;
+    // 同日は base/holiday を先、entry を後に
+    var order = { base: 0, holiday: 0, entry: 1 };
+    return (order[a.kind] || 0) - (order[b.kind] || 0);
+  });
+
   return { workdays: workdays, base: base, adj: adj, total: base + adj, breakdown: breakdown };
 }
 
@@ -766,15 +793,19 @@ function renderHoursSummary() {
   if (r.breakdown.length > 0) {
     breakdownHtml = '<div class="hours-breakdown">';
     r.breakdown.forEach(function(item) {
-      var deltaStr, deltaClass;
-      if (item.delta === null) {
-        deltaStr  = '計算対象外';
+      var deltaStr, deltaClass = '', rowClass = '';
+      if (item.kind === 'holiday') {
+        deltaStr = '祝日休み';
+        deltaClass = ' hours-bna';
+        rowClass = ' hours-brow-hol';
+      } else if (item.delta === null) {
+        deltaStr = '計算対象外';
         deltaClass = ' hours-bna';
       } else {
-        deltaStr  = (item.delta >= 0 ? '+' : '') + item.delta.toFixed(1) + 'h';
-        deltaClass = '';
+        deltaStr = (item.delta >= 0 ? '+' : '') + item.delta.toFixed(1) + 'h';
+        if (item.kind === 'base') rowClass = ' hours-brow-base';
       }
-      breakdownHtml += '<div class="hours-brow">'
+      breakdownHtml += '<div class="hours-brow' + rowClass + '">'
         + '<span class="hours-bdate">' + formatDate(item.date) + '</span>'
         + '<span class="hours-blabel">' + item.label + '</span>'
         + '<span class="hours-bdelta' + deltaClass + '">' + deltaStr + '</span>'
