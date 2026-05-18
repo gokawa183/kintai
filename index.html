@@ -143,6 +143,11 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .legend-dot.filled  { background: var(--text-muted); }
 .legend-dot.outlined { background: transparent; border: 2px solid var(--text-muted); }
+.overtime-check-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.overtime-check-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--text); flex-shrink: 0; cursor: pointer; }
+.overtime-check-row span { font-size: 14px; color: var(--text); cursor: pointer; }
+.overtime-time-field { display: none; margin-top: 10px; }
+.overtime-time-field.open { display: block; }
 </style>
 </head>
 <body>
@@ -243,6 +248,16 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
     </div>
     <div class="field"><label>実際の出退勤時刻</label>
       <div class="time-row"><input type="time" id="l-start"><span>〜</span><input type="time" id="l-end"></div>
+    </div>
+    <div class="field">
+      <label>残業</label>
+      <div class="overtime-check-row">
+        <input type="checkbox" id="l-overtime-check" onchange="toggleOvertimeField()">
+        <span onclick="document.getElementById('l-overtime-check').click()">残業あり</span>
+      </div>
+      <div class="overtime-time-field" id="l-overtime-time">
+        <div class="time-row"><input type="time" id="l-ot-start"><span>〜</span><input type="time" id="l-ot-end"></div>
+      </div>
     </div>
     <div class="field"><label>メモ（任意）</label><textarea id="l-memo" placeholder="例：電車遅延、体調不良"></textarea></div>
     <div class="field"><span class="checklist-label">月末に必要な入力作業</span>
@@ -379,15 +394,23 @@ var TYPE_META = {
       { sys: 'jisha', text: '自社システム：実働時間を正しく入力する' },
     ],
     getDetail: function() {
-      var ltype = document.getElementById('l-type').value;
-      var start = document.getElementById('l-start').value;
-      var end   = document.getElementById('l-end').value;
-      var memo  = document.getElementById('l-memo').value;
-      return ltype + (start&&end ? '　'+start+'〜'+end : '') + (memo ? '　'+memo : '');
+      var ltype   = document.getElementById('l-type').value;
+      var start   = document.getElementById('l-start').value;
+      var end     = document.getElementById('l-end').value;
+      var otCheck = document.getElementById('l-overtime-check').checked;
+      var otStart = document.getElementById('l-ot-start').value;
+      var otEnd   = document.getElementById('l-ot-end').value;
+      var memo    = document.getElementById('l-memo').value;
+      var ot = (otCheck && otStart && otEnd) ? '　残業'+otStart+'〜'+otEnd : '';
+      return ltype + (start&&end ? '　'+start+'〜'+end : '') + ot + (memo ? '　'+memo : '');
     },
     clearFields: function() {
       document.getElementById('l-start').value = '';
       document.getElementById('l-end').value   = '';
+      document.getElementById('l-overtime-check').checked = false;
+      document.getElementById('l-ot-start').value = '';
+      document.getElementById('l-ot-end').value   = '';
+      document.getElementById('l-overtime-time').classList.remove('open');
       document.getElementById('l-memo').value  = '';
     },
   },
@@ -401,6 +424,11 @@ var TYPE_META = {
     clearFields: function() {},
   },
 };
+
+function toggleOvertimeField() {
+  var checked = document.getElementById('l-overtime-check').checked;
+  document.getElementById('l-overtime-time').classList.toggle('open', checked);
+}
 
 // ---- 出社スケジュール ----
 var SCHEDULE_KEY = 'kintai_schedule';
