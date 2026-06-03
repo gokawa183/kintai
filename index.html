@@ -220,7 +220,6 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 <div class="tab-bar">
   <button class="tab active" onclick="showTab('new')">＋ 新規登録</button>
   <button class="tab" onclick="showTab('list')">登録済み一覧</button>
-  <button class="tab" onclick="showTab('pl')">PL業務</button>
 </div>
 
 <!-- 新規登録 -->
@@ -345,19 +344,10 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
   </div>
   <div id="hours-summary"></div>
   <div id="entry-list"></div>
+  <div id="pl-content"></div>
   <div class="reset-area">
     <button class="btn-reset" onclick="resetData()">データをリセット</button>
   </div>
-</div>
-
-<!-- PL業務 -->
-<div id="pl" class="section">
-  <div class="month-filter">
-    <button onclick="changePlFilter(-1)">&#8249;</button>
-    <span class="mlabel" id="pl-filter-label">－</span>
-    <button onclick="changePlFilter(1)">&#8250;</button>
-  </div>
-  <div id="pl-content"></div>
 </div>
 
 <script>
@@ -1024,6 +1014,7 @@ function renderList() {
     });
   }
   container.appendChild(renderFixedTaskCard());
+  renderPl();
 }
 
 function renderFixedTaskCard() {
@@ -1084,8 +1075,6 @@ function resetData() {
 // ---- PL業務 ----
 var PL_STORAGE_KEY = 'kintai_pl_tasks';
 var plTaskDone = {};
-var plFilterYear  = new Date().getFullYear();
-var plFilterMonth = new Date().getMonth();
 var plTaspoOpen = false;
 
 var PL_TASKS = [
@@ -1118,14 +1107,7 @@ function savePlTasks() {
 }
 
 function getPlMonthKey() {
-  return plFilterYear + '-' + (plFilterMonth + 1 < 10 ? '0' : '') + (plFilterMonth + 1);
-}
-
-function changePlFilter(dir) {
-  plFilterMonth += dir;
-  if (plFilterMonth < 0)  { plFilterMonth = 11; plFilterYear--; }
-  if (plFilterMonth > 11) { plFilterMonth = 0;  plFilterYear++; }
-  renderPl();
+  return filterYear + '-' + (filterMonth + 1 < 10 ? '0' : '') + (filterMonth + 1);
 }
 
 function isTaspoDone(state) {
@@ -1172,7 +1154,6 @@ function toggleTaspoOpen() {
 }
 
 function renderPl() {
-  document.getElementById('pl-filter-label').textContent = MONTHS[plFilterMonth] + ' ' + plFilterYear;
   var mk = getPlMonthKey();
   var state = plTaskDone[mk] || {};
   var doneCount = 0;
@@ -1248,7 +1229,6 @@ renderOtDefaults();
 loadFixedTasks();
 loadPlTasks();
 renderList();
-renderPl();
 </script>
 </body>
 </html>
