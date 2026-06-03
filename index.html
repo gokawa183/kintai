@@ -1090,6 +1090,7 @@ var TASPO_MEMBERS = [
   { key: 'h',    label: 'Hさん' },
   { key: 's',    label: 'Sさん' },
 ];
+var PERSON_TO_TASPO = { self: 'self', h: 'h', k: 's' };
 var TASPO_CHECKS = [
   { key: 'hours', label: '勤務時間' },
   { key: 'leave', label: '有給取得日数' },
@@ -1185,8 +1186,11 @@ function renderPl() {
       html += '<span style="font-size:12px;color:var(--text-faint);margin-left:4px;">' + (plTaspoOpen ? '▲' : '▼') + '</span>';
       html += '</div>';
       if (plTaspoOpen) {
+        var membersToShow = currentPerson === 'all'
+          ? TASPO_MEMBERS
+          : TASPO_MEMBERS.filter(function(m) { return m.key === PERSON_TO_TASPO[currentPerson]; });
         html += '<div class="pl-taspo-sub">';
-        TASPO_MEMBERS.forEach(function(m) {
+        membersToShow.forEach(function(m) {
           html += '<div class="pl-sub-member">';
           html += '<div class="pl-sub-member-name">' + m.label + '</div>';
           TASPO_CHECKS.forEach(function(c) {
