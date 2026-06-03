@@ -1164,14 +1164,27 @@ function toggleJissekiOpen() {
 }
 
 function isJissekiDone(state) {
-  return !!(state.jisseki && typeof state.jisseki === 'object' && state.jisseki.reflected);
+  var j = (state.jisseki && typeof state.jisseki === 'object') ? state.jisseki : {};
+  for (var mi = 0; mi < TASPO_MEMBERS.length; mi++) {
+    if (!j[TASPO_MEMBERS[mi].key]) return false;
+  }
+  return true;
 }
 
-function toggleJissekiSub() {
+function jissekiSubDoneCount(state) {
+  var j = (state.jisseki && typeof state.jisseki === 'object') ? state.jisseki : {};
+  var count = 0;
+  for (var mi = 0; mi < TASPO_MEMBERS.length; mi++) {
+    if (j[TASPO_MEMBERS[mi].key]) count++;
+  }
+  return count;
+}
+
+function toggleJissekiSub(memberKey) {
   var mk = getPlMonthKey();
   if (!plTaskDone[mk]) plTaskDone[mk] = {};
   if (!plTaskDone[mk].jisseki || typeof plTaskDone[mk].jisseki !== 'object') plTaskDone[mk].jisseki = {};
-  plTaskDone[mk].jisseki.reflected = !plTaskDone[mk].jisseki.reflected;
+  plTaskDone[mk].jisseki[memberKey] = !plTaskDone[mk].jisseki[memberKey];
   savePlTasks();
   renderPl();
 }
@@ -1242,20 +1255,31 @@ function renderPl() {
         html += '</div>';
       }
     } else if (t.expandable) {
-      var jDone = isJissekiDone(state);
-      var jData = (state.jisseki && typeof state.jisseki === 'object') ? state.jisseki : {};
+      var jDone   = isJissekiDone(state);
+      var jSubDone  = jissekiSubDoneCount(state);
+      var jSubTotal = TASPO_MEMBERS.length;
+      var jData   = (state.jisseki && typeof state.jisseki === 'object') ? state.jisseki : {};
+      var jMembersToShow = currentPerson === 'all'
+        ? TASPO_MEMBERS
+        : TASPO_MEMBERS.filter(function(m) { return m.key === PERSON_TO_TASPO[currentPerson]; });
       html += '<div class="pl-task-item' + (jDone ? ' done' : '') + '" onclick="toggleJissekiOpen()" style="cursor:pointer;">';
       html += '<input type="checkbox"' + (jDone ? ' checked' : '') + ' onclick="event.stopPropagation();" style="pointer-events:none;">';
       html += '<span class="pl-task-label">' + t.label + '</span>';
-      html += '<span style="font-size:12px;color:var(--text-faint);margin-left:auto;">' + (plJissekiOpen ? '▲' : '▼') + '</span>';
+      html += '<span class="pl-sub-progress">' + jSubDone + '/' + jSubTotal + '</span>';
+      html += '<span style="font-size:12px;color:var(--text-faint);margin-left:4px;">' + (plJissekiOpen ? '▲' : '▼') + '</span>';
       html += '</div>';
       if (plJissekiOpen) {
-        var jChecked = !!jData.reflected;
         html += '<div class="pl-taspo-sub">';
-        html += '<div class="pl-sub-item' + (jChecked ? ' done' : '') + '" onclick="toggleJissekiSub()" style="padding:10px 0;">';
-        html += '<input type="checkbox"' + (jChecked ? ' checked' : '') + ' onclick="event.stopPropagation();toggleJissekiSub()">';
-        html += '<label>TASPOで入力した内容が反映されているか</label>';
-        html += '</div>';
+        jMembersToShow.forEach(function(m) {
+          var checked = !!jData[m.key];
+          html += '<div class="pl-sub-member">';
+          html += '<div class="pl-sub-member-name">' + m.label + '</div>';
+          html += '<div class="pl-sub-item' + (checked ? ' done' : '') + '" onclick="toggleJissekiSub(\'' + m.key + '\')">';
+          html += '<input type="checkbox"' + (checked ? ' checked' : '') + ' onclick="event.stopPropagation();toggleJissekiSub(\'' + m.key + '\')">';
+          html += '<label>TASPOで入力した内容が反映されているか</label>';
+          html += '</div>';
+          html += '</div>';
+        });
         html += '</div>';
       }
     } else {
