@@ -1175,6 +1175,12 @@ function calcMemberOvertime(taspoKey, year, month) {
           if (delta > 0) ot += delta;
         }
       }
+    } else if (e.type === 'training') {
+      var hours = parseTimeRange(e.detail);
+      if (hours !== null) {
+        var delta = (hours - 1) - 8;
+        if (delta > 0) ot += delta;
+      }
     }
   });
   return ot;
